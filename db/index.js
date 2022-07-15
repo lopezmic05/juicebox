@@ -25,6 +25,19 @@ async function getAllUsers() {
     }
   }
 
+  async function createPost({ authorId, title, content}) {
+    try {
+      const result = await client.query(`
+      INSERT INTO posts(authorId, title, content) VALUES ($1, $2, $3)
+      RETURNING *;
+      `, [authorId, title, content]); 
+  
+      return result
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async function updateUser( id, fields = {}) {
     // build the set string
     const setString = Object.keys(fields).map(
