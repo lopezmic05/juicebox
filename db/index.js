@@ -11,6 +11,20 @@ async function getAllUsers() {
     return rows;
   }
 
+  async function createUser({ username, password }) {
+    try {
+      const result = await client.query(`
+  
+      `);
+  
+      return result
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+
 
 module.exports = {
     client,
