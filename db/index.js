@@ -121,23 +121,26 @@ async function createTags(tagList) {
   // need something like $1, $2, $3
   const selectValues = tagList.map(
     (_, index) => `$${index + 1}`).join(', ');
+    console.log(selectValues, "THIS IS SECLECTVALUES")
   // then we can use (${ selectValues }) in our string template
 
   try {
-    const result = await client.query(`
-  INSERT INTO tags(name)
-  VALUES ($1), ($2), ($3)
-  ON CONFLICT (name) DO NOTHING;
-  SELECT * FROM tags
-  WHERE name
-  IN ($1, $2, $3);
-  `)
+    await client.query(`
+    INSERT INTO tags(name)
+    VALUES (${ insertValues })
+    ON CONFLICT (name) DO NOTHING;
+  `, tagList)
+    const { rows } = await client.query(`
+    SELECT * FROM tags
+    WHERE name
+    IN (${ selectValues });
+    `, tagList)
     // insert the tags, doing nothing on conflict
     // returning nothing, we'll query after
 
     // select all tags where the name is in our taglist
     // return the rows from the query
-     return result;
+     return rows;
   } catch (error) {
     throw error;
   }
@@ -150,6 +153,52 @@ async function createPostTag(postId, tagId) {
       VALUES ($1, $2)
       ON CONFLICT ("postId", "tagId") DO NOTHING;
     `, [postId, tagId]);
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getPostById(postId) {
+  try {
+    const { rows: [ post ]  } = await client.query(`
+      SELECT *
+      FROM posts
+      WHERE id=$1;
+    `, [postId]);
+
+    const { rows: tags } = await client.query(`
+      SELECT tags.*
+      FROM tags
+      JOIN post_tags ON tags.id=post_tags."tagId"
+      WHERE post_tags."postId"=$1;
+    `, [postId])
+
+    const { rows: [author] } = await client.query(`
+      SELECT id, username, name, location
+      FROM users
+      WHERE id=$1;
+    `, [post.authorId])
+
+    post.tags = tags;
+    post.author = author;
+
+    delete post.authorId;
+
+    return post;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function addTagsToPost(postId, tagList) {
+  try {
+    const createPostTagPromises = tagList.map(
+      tag => createPostTag(postId, tag.id)
+    );
+
+    await Promise.all(createPostTagPromises);
+
+    return await getPostById(postId);
   } catch (error) {
     throw error;
   }
@@ -218,5 +267,7 @@ module.exports = {
   getAllPosts,
   getPostsByUser,
   createTags,
-  createPostTag
+  createPostTag,
+  addTagsToPost,
+  getPostById
 }
