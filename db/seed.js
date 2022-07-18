@@ -80,6 +80,11 @@ async function createInitialUsers() {
   }
 }
 
+
+
+
+
+
 async function createInitialPosts() {
   try {
     const [albert, sandra, glamgal] = await getAllUsers();
