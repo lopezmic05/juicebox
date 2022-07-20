@@ -85,7 +85,7 @@ async function getUserById(userId) {
   }
 }
 
-async function createPost({ authorId, title, content, tags }) {
+async function createPost({ authorId, title, content, tags = [] }) {
   try {
     const {
       rows: [post],
@@ -152,8 +152,6 @@ async function getAllTags() {
     throw error;
   }
 }
-
-
 
 async function createPostTag(postId, tagId) {
   try {
@@ -329,11 +327,16 @@ async function getPostsByTagName(tagName) {
 
 async function getUserByUsername(username) {
   try {
-    const { rows: [user] } = await client.query(`
+    const {
+      rows: [user],
+    } = await client.query(
+      `
       SELECT *
       FROM users
       WHERE username=$1;
-    `, [username]);
+    `,
+      [username]
+    );
 
     return user;
   } catch (error) {
@@ -354,5 +357,5 @@ module.exports = {
   getPostById,
   getPostsByTagName,
   getAllTags,
-  getUserByUsername
+  getUserByUsername,
 };
