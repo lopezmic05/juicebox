@@ -115,6 +115,14 @@ async function createInitialPosts() {
     });
 
     await createPost({
+      authorId: albert.id,
+      title: "Second Post",
+      content:
+        "This is my second post. I hope I love writing blogs as much as I love writing them.",
+      tags: ["#happy", "#youcandoanything"],
+    });
+
+    await createPost({
       authorId: sandra.id,
       title: "First Post",
       content:
