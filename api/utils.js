@@ -11,6 +11,16 @@ function requireUser(req, res, next) {
   next();
 }
 
+function requireActiveUser(req, res, next) {
+    if(!req.user.active) {
+        next({
+            name: "MissingUserNotActive",
+            message: "This user is not currently active"
+        })
+    }
+    next();
+}
+
 module.exports = {
-  requireUser,
+  requireUser, requireActiveUser
 };

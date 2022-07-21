@@ -6,34 +6,39 @@ const { getAllTags, getPostsByTagName } = require("../db");
 tagsRouter.use((req, res, next) => {
   console.log("A request is being made to /tags");
 
-  next(); // THIS IS DIFFERENT
+  next();
 });
 
 tagsRouter.get("/", async (req, res) => {
   const tags = await getAllTags();
-  console.log('receieved all TAGS')
+
+  const deleteTags = tags.filter((user) => {
+    return user.active;
+  });
+  console.log("receieved all TAGS");
   res.send({
-    tags,
+    deleteTags,
   });
 });
 
-tagsRouter.get('/:tagName/posts', async (req, res, next) => {
-  console.log('Starting Second GET')
-    const  tagName = req.params.tagName
-  
+tagsRouter.get("/:tagName/posts", async (req, res, next) => {
+  console.log("Starting Second GET");
+  const tagName = req.params.tagName;
+
   try {
-    console.log('starting TAGS')
-    const returnPosts = await getPostsByTagName(tagName)
-    console.log('middle of TAGS')
+    console.log("starting TAGS");
+    const returnPosts = await getPostsByTagName(tagName);
+    console.log("middle of TAGS");
+    const filteredPosts = returnPosts.filter(post =>{
+      return post.active || (req.user && post.author.id === req.user.id)
+    })
     if (returnPosts) {
-      res.send({returnPosts})
+      res.send({ filteredPosts });
     }
-    
-    console.log('finish TAGS')
-    // use our method to get posts by tag name from the db
-    // send out an object to the client { posts: // the posts }
+
+    console.log("finish TAGS");
   } catch ({ name, message }) {
-    next ({ name, message })
+    next({ name, message });
   }
 });
 

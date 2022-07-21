@@ -1,18 +1,21 @@
 const express = require("express");
 const usersRouter = express.Router();
 const jwt = require("jsonwebtoken");
+const { requireUser, requireActiveUser } = require("./utils");
 
 const {
   getAllUsers,
   getUserByUsername,
   createUser,
-  createPost,
+  getUserById,
+  updateUser,
 } = require("../db");
+const { requireActiveUser } = require("./utils");
 
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
 
-  next(); // THIS IS DIFFERENT
+  next();
 });
 
 usersRouter.get("/", async (req, res) => {
@@ -98,5 +101,66 @@ usersRouter.post("/login", async (req, res, next) => {
     next(error);
   }
 });
+
+usersRouter.delete(
+  "/:userId",
+  requireUser,
+  requireActiveUser,
+  async (req, res, next) => {
+    try {
+      const user = await getUserById(req.params.userId);
+
+      if (user && user.id === req.user.id) {
+        const updatedUser = await updateUser(user.id, { active: false });
+
+        res.send({ user: updatedUser });
+      } else {
+        next(
+          user
+            ? {
+                name: "UnauthorizedError",
+                message: "Not authorized to delete",
+              }
+            : {
+                name: "UserNotFoundError",
+                message: "That user does not exist",
+              }
+        );
+      }
+    } catch ({ name, message }) {
+      next({ name, message });
+    }
+  }
+);
+
+usersRouter.patch(
+  "/:userId",
+  requireUser,
+  requireActiveUser,
+  async (req, res, next) => {
+    const { userId } = req.params;
+    const { active } = req.body;
+    const updatedField = {};
+    if (active) {
+      updatedField.active = active;
+    }
+    try {
+      const originalUser = await getUserById(userId);
+      const originalUserId = originalUser.id;
+
+      if (originalUserId === req.user.id) {
+        const updatedUser = await updateUser(userId, updatedField);
+        res.send({ userId: updatedUser });
+      } else {
+        next({
+          name: "UnauthorizedUserError",
+          message: "You can only reactivate your own account",
+        });
+      }
+    } catch ({ name, message }) {
+      next({ name, message });
+    }
+  }
+);
 
 module.exports = usersRouter;
